@@ -67,10 +67,127 @@ app.delete("/tickets/:id", async (req, res) => {
 })
 connectDB()
 
-app.get("/tickets/open", async (req, res) => {
+app.get("/tickets/open/status", async (req, res) => {
     try {
-        const chamadoAberto = await Ticket.find()
+        const chamadoAberto = await Ticket.find({
+            status: "Aberto"
+        })
         res.json(chamadoAberto)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/priority/:prioridade", async (req, res) => {
+    try {
+        const chamadoPri = await Ticket.find({
+            prioridade: req.params.prioridade
+        })
+        res.json(chamadoPri)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/category/:categoria", async (req, res) => {
+    try {
+        const chamadoCat = await Ticket.find({
+            categoria: req.params.categoria
+        })
+        res.json(chamadoCat)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.patch("/tickets/:id/status", async (req, res) => {
+    try {
+        const chamados = await Ticket.findByIdAndUpdate(
+            req.params.id,
+            { status: req.body.status },
+            { new: "Resolvido" }
+        )
+        res.json(chamados)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/in-progress/progress", async (req, res) => {
+    try {
+        const chamadoPro = await Ticket.find({
+            status: "Em Andamento"
+        })
+        res.json(chamadoPro)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/requester/:nome", async (req, res) => {
+    try {
+        const chamadoNome = await Ticket.find({
+            solicitante: req.params.nome
+        })
+        res.json(chamadoNome)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/ticket/count/total", async (req, res) => {
+    try {
+        const chamadoTotal = await Ticket.countDocuments()
+        res.json({ TotalDeChamados: chamadoTotal })
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/resolved/count", async (req, res) => {
+    try {
+        const chamadoRes = await Ticket.countDocuments({
+            status: "Resolvido"
+        })
+        res.json({ ChamadosResolvidos: chamadoRes })
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.get("/tickets/ordered/ordem", async (req, res) => {
+    try {
+        const chamados = await Ticket.find()
+        const prioridades = {
+            "Alta": 1,
+            "Média": 2,
+            "Baixa": 3,
+        };
+        chamados.sort((a, b) => {
+            return prioridades[a.prioridade] - prioridades[b.prioridade];
+        });
+        res.json(chamados)
+    } catch (error) {
+        res.json({ error: error.message })
+    }
+})
+
+app.delete("/tickets/:id/delete", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const chamado = await Ticket.findById(id)
+        if (!chamado) {
+            res.json({ error: "Chamado não encontrado." });
+        }
+
+        if (chamado.status === "Aberto" || chamado.status === "Em andamento") {
+            res.json({
+                error: "Chamado não Resolvido"
+            });
+        }
+        await Ticket.findByIdAndDelete(id);
+
+        return res.json({ message: "Chamado excluído" });
     } catch (error) {
         res.json({ error: error.message })
     }
